@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"github.com/HouzuoGuo/tiedot/db"
 	"log"
+	"sort"
+	"time"
 )
 
 /*
@@ -42,6 +44,11 @@ func GetDb() (myDB *db.DB, err error) {
 	return
 }
 
+type ByCreated []Paste
+
+func (this ByCreated) Len() int           { return len(this) }
+func (this ByCreated) Less(i, j int) bool { return this[i].CreatedOn.After(this[j].CreatedOn) }
+func (this ByCreated) Swap(i, j int)      { this[i], this[j] = this[j], this[i] }
 func GetAll() (pastes []Paste) {
 	myDB, err1 := GetDb()
 	if err1 != nil {
@@ -56,8 +63,10 @@ func GetAll() (pastes []Paste) {
 	for id := range result {
 
 		doc, _ := col.Read(id)
-		docObj := Paste{Id: id, Title: doc[TITLE].(string), Content: doc[CONTENT].(string)}
+		theTime, _ := time.Parse(time.RFC3339, doc[CREATED].(string))
+		docObj := Paste{Id: id, Title: doc[TITLE].(string), Content: doc[CONTENT].(string), CreatedOn: theTime}
 		docs = append(docs, docObj)
 	}
+	sort.Sort(ByCreated(docs))
 	return docs
 }
