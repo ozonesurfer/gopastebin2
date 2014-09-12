@@ -37,6 +37,8 @@ func init() {
 	} else {
 		log.Println("Collection already exists")
 	}
+	col := myDB.Use(PASTES)
+	col.Index([]string{"title"})
 }
 
 func GetDb() (myDB *db.DB, err error) {
@@ -57,7 +59,11 @@ func GetAll() (pastes []Paste) {
 	col := myDB.Use(PASTES)
 	var query interface{}
 	result := make(map[int]struct{})
-	json.Unmarshal([]byte(`"all"`), &query)
+	err := json.Unmarshal([]byte(`"all"`), &query)
+	//	err := json.Unmarshal([]byte(`{"limit": 5}`), &query)
+	if err != nil {
+		log.Fatal("json error:", err)
+	}
 	db.EvalQuery(query, col, &result)
 	var docs []Paste
 	for id := range result {
@@ -68,5 +74,6 @@ func GetAll() (pastes []Paste) {
 		docs = append(docs, docObj)
 	}
 	sort.Sort(ByCreated(docs))
-	return docs
+	q := docs[0:5]
+	return q
 }
